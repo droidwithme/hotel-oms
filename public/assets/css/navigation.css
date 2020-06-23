@@ -1,0 +1,23 @@
+/* Created by Yasin Allan on 12/26/2017 */
+
+.navbar{
+    padding: 0 1rem;
+}
+
+/* nav brand */
+.navbar .navbar-brand{
+    padding: .5rem 0;
+}
+
+/* nav links */
+.navbar .navbar-nav .nav-item{
+    padding: .5rem 0;
+}
+
+.navbar .navbar-nav .nav-item.active{
+    background-color: #009688!important;
+}
+
+.dropdown-item.active, .dropdown-item:active{
+    background-color: #009688;
+}

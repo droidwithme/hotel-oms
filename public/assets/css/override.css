@@ -1,0 +1,23 @@
+.bg-primary{
+    background-color: #009688 !important;
+}
+
+.text-primary{
+    color: #009688 !important;
+}
+
+.btn-primary{
+    background-color: #009688 !important;
+    border-color: #009688 !important;
+}
+
+.btn-primary:hover{
+    background-color: #00796B !important;
+    border-color: #00796B !important;
+}
+
+.page-item.active .page-link {
+    background-color: #009688;
+    border-color: #009688;
+
+}
