@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\User\Auth;
 
 use App\Http\Controllers\Api\Methods\ApiMethods;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Methods\Methods;
 use App\Http\Requests\ApiRegisterRequest;
 use App\Models\ApiUser;
 use DateTime;
@@ -27,7 +28,7 @@ class AuthController extends Controller
     {
         $checkUserMobile = ApiUser::where('mobile', $request->mobile)->first();
         $checkUserEmail = ApiUser::where('email', $request->email)->first();
-        if ($checkUserMobile) {
+        if (isset($checkUserMobile)) {
 
             $responseBody = [
                 'statusCode' => 422,
@@ -35,8 +36,7 @@ class AuthController extends Controller
                 'message' => 'User already exists, please try logging in.'
             ];
             return ApiMethods::apiResponse('error', $responseBody);
-
-        } elseif ($checkUserEmail) {
+        } elseif (isset($checkUserEmail) && (isset($request->email) && $request->email != '')) {
 
             $responseBody = [
                 'statusCode' => 422,
@@ -44,7 +44,6 @@ class AuthController extends Controller
                 'message' => 'This email is already taken, please try a different one.'
             ];
             return ApiMethods::apiResponse('error', $responseBody);
-
         } else {
             //profile_picture_path
             $profilePicture = $request->file('profile-picture');
@@ -70,11 +69,7 @@ class AuthController extends Controller
                 }
             }
 
-            try {
-                $date = new DateTime("NOW");
-            } catch (Exception $e) {
-            }
-            $verification_code = null;
+            $verification_code = time();
 
             $user = new ApiUser();
             $user->name = $request->name;
@@ -85,21 +80,21 @@ class AuthController extends Controller
             $user->address = $request->address;
             $user->lat = $request->lat;
             $user->long = $request->long;
-            $user->verification_code = $verification_code;
             $user->profile_picture_path = $profilePictureName;
-            $user->active = 1;
+            $user->verification_code = $verification_code;
             $user->fcm_token = $request->fcm_token;
             $success = $user->save();
             if ($success) {
-                $data = ApiUser::find($user->id);
+                // $data = ApiUser::find($user->id);
 
-                $token = $this->guard()->fromUser($data);
-                $data['token'] = $token;
-                $data = ApiMethods::convertNullToEmptyOnUser($data);
+                // $token = $this->guard()->fromUser($data);
+                // $data['token'] = $token;
+                // $data = ApiMethods::convertNullToEmptyOnUser($data);
+                Methods::sendOtpVerificationSMS($request->mobile, $verification_code);
 
                 $responseBody = [
-                    'message' => 'Thank you for registering with us',
-                    'data' => $data
+                    'message' => 'Thank you for registering with us, a verification code was sent to you, please verify',
+                    'data' => []
                 ];
                 return ApiMethods::apiResponse('success', $responseBody);
             } else {
@@ -131,40 +126,112 @@ class AuthController extends Controller
         ]);
 
         if ($validate) {
-            $check = ApiUser::where(['mobile' => $request->mobile, 'verification_code' => $request->code])->first();
-            if ($check) {
 
-                $check->verification_code = null;
-                $check->active = 1;
-                $operation = $check->save();
-                if ($operation) {
+            // Check mobile number
+            $checkValidMobileNumber =  ApiUser::where('mobile', $request->input('mobile'))->first();
+            if (isset($checkValidMobileNumber)) {
+                // Check for verified status
+                if (!$checkValidMobileNumber->verified) {
+                    // Check for verification code
+                    if ($checkValidMobileNumber->verification_code == $request->input('code')) {
+                        $checkValidMobileNumber->verification_code = null;
+                        $checkValidMobileNumber->verified = 1;
+                        $checkValidMobileNumber->active = 1;
+                        $operation = $checkValidMobileNumber->save();
+                        if ($operation) {
+                            $data = ApiMethods::convertNullToEmptyOnUser($checkValidMobileNumber);
+                            $token = $this->guard()->fromUser($checkValidMobileNumber);
 
-                    $data = $check->toArray();
-                    $data = ApiMethods::convertNullToEmptyOnUser($data);
+                            $data['token'] = $token;
 
-                    $token = $this->guard()->fromUser($check);
+                            $responseBody = [
+                                'message' => 'Welcome to Store app.',
+                                'data' => $data
+                            ];
+                            return ApiMethods::apiResponse('success', $responseBody);
+                        } else {
+                            $responseBody = [
+                                'statusCode' => 500,
+                                'error' => 'verify.activation_failure',
+                                'message' => 'Something went wrong, please try again.'
+                            ];
+                            return ApiMethods::apiResponse('error', $responseBody);
+                        }
+                    } else {
+                        $responseBody = [
+                            'statusCode' => 422,
+                            'error' => 'verify.wrong_otp',
+                            'message' => 'The otp you entered is wrong, please enter a valid one.'
+                        ];
+                        return ApiMethods::apiResponse('error', $responseBody);
+                    }
+                } else {
+                    $responseBody = [
+                        'statusCode' => 422,
+                        'error' => 'verify.verified',
+                        'message' => 'You are already verified please try loggin in.'
+                    ];
+                    return ApiMethods::apiResponse('error', $responseBody);
+                }
+            } else {
+                $responseBody = [
+                    'statusCode' => 422,
+                    'error' => 'verify.invalid_mobile',
+                    'message' => 'The mobile number you entered is not registered, please register first then try again.'
+                ];
+                return ApiMethods::apiResponse('error', $responseBody);
+            }
+        } else {
+            $responseBody = [
+                'statusCode' => 500,
+                'error' => 'verify.validation_failed',
+                'message' => 'Something went wrong, please try again.'
+            ];
+            return ApiMethods::apiResponse('error', $responseBody);
+        }
+    }
 
-                    $data['token'] = $token;
+    /**
+     * Verify the user
+     * @param Request $request
+     * @return ResponseFactory|Response
+     */
+    public function resentVerificationCode(Request $request)
+    {
+        $validate = $request->validate([
+            'mobile' => 'required|numeric|digits_between:10,13',
+        ], [
+            'mobile.required' => 'A mobile number is required',
+            'mobile.digits_between' => 'Mobile must be of at least 10 - 13 digits',
+        ]);
+
+        if ($validate) {
+
+            // Check mobile number
+            $checkValidMobileNumber =  ApiUser::where('mobile', $request->input('mobile'))->first();
+            if (isset($checkValidMobileNumber)) {
+                // Check for verified status
+                if (!$checkValidMobileNumber->verified) {
+                    Methods::sendOtpVerificationSMS($request->mobile, $checkValidMobileNumber->verification_code);
 
                     $responseBody = [
-                        'message' => 'Welcome to Store app.',
-                        'data' => $data
+                        'message' => 'Verification code was resent to the your mobile number.',
+                        'data' => []
                     ];
                     return ApiMethods::apiResponse('success', $responseBody);
                 } else {
                     $responseBody = [
-                        'statusCode' => 500,
-                        'error' => 'verify.activation_failure',
-                        'message' => 'Something went wrong, please try again.'
+                        'statusCode' => 422,
+                        'error' => 'verify.verified',
+                        'message' => 'You are already verified please try loggin in.'
                     ];
                     return ApiMethods::apiResponse('error', $responseBody);
                 }
-
             } else {
                 $responseBody = [
                     'statusCode' => 422,
-                    'error' => 'verify.wrong_otp',
-                    'message' => 'The otp you entered is wrong, please enter a proper one.'
+                    'error' => 'verify.invalid_mobile',
+                    'message' => 'The mobile number you entered is not registered, please register first then try again.'
                 ];
                 return ApiMethods::apiResponse('error', $responseBody);
             }
@@ -187,6 +254,7 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
+
         $mobile = $request->input('mobile');
         $password = $request->input('password');
         $fcmToken = $request->input('fcm_token');
@@ -207,63 +275,71 @@ class AuthController extends Controller
 
         if ($validate) {
             $checkUser = ApiUser::where('mobile', $mobile)->first();
-            $attemptLogin = $this->guard()->attempt(['mobile' => $mobile, 'password' => $password, 'active' => 1]);
-            if ($attemptLogin) {
-                $user = $this->guard()->user();
+            if (isset($checkUser)) {
+                // Check for valid status
+                if ($checkUser->verified && $checkUser->active) {
+                    $attemptLogin = $this->guard()->attempt(['mobile' => $mobile, 'password' => $password, 'active' => 1, 'verified' => 1]);
+                    if ($attemptLogin) {
+                        $user = $this->guard()->user();
 
-                $regex = '/^[-]?(([0-8]?[0-9])\.(\d+))|(90(\.0+)?)$/';
-                //update lat long
-                if (isset($lat) && isset($long) && preg_match_all($regex, $lat) && preg_match_all($regex, $long)) {
-                    $user->lat = $lat;
-                    $user->long = $long;
-                }
+                        $regex = '/^[-]?(([0-8]?[0-9])\.(\d+))|(90(\.0+)?)$/';
+                        //update lat long
+                        if (isset($lat) && isset($long) && preg_match_all($regex, $lat) && preg_match_all($regex, $long)) {
+                            $user->lat = $lat;
+                            $user->long = $long;
+                        }
 
-                // Update Fcm token in table
-                $user->fcm_token = $fcmToken;
-                $user->save();
+                        // Update Fcm token in table
+                        $user->fcm_token = $fcmToken;
+                        $user->save();
 
-                $user = ApiMethods::convertNullToEmptyOnUser($user);
-                // Give server token to app
-                $data = $user->toArray();
-                $data['token'] = $attemptLogin;
+                        $user = ApiMethods::convertNullToEmptyOnUser($user);
+                        // Give server token to app
+                        $data = $user->toArray();
+                        $data['token'] = $attemptLogin;
 
-                $responseBody = [
-                    'message' => 'Welcome back.',
-                    'data' => $data
-                ];
-                return ApiMethods::apiResponse('success', $responseBody);
-            } else {
-                if (!empty($checkUser)) {
-                    $checkUserPassword = $this->guard()->attempt(['mobile' => $mobile, 'password' => $password]);
-                    if ($checkUserPassword) {
                         $responseBody = [
-                            'statusCode' => 422,
-                            'error' => 'login.user_not_verified',
-                            'message' => 'You have not verified yourself, please verify then try again.'
+                            'message' => 'Welcome back.',
+                            'data' => $data
                         ];
-                        return ApiMethods::apiResponse('error', $responseBody);
+                        return ApiMethods::apiResponse('success', $responseBody);
                     } else {
                         $responseBody = [
-                            'statusCode' => 401,
-                            'error' => 'login.invalid_credentials',
-                            'message' => 'Mobile number and password combination is incorrect.'
+                            'statusCode' => 500,
+                            'error' => 'login.process',
+                            'message' => 'Something went wrong, please try again.'
                         ];
                         return ApiMethods::apiResponse('error', $responseBody);
                     }
                 } else {
-                    $responseBody = [
-                        'statusCode' => 404,
-                        'error' => 'login.user_does_not_exist',
-                        'message' => 'This user does not exist, please register.'
-                    ];
-                    return ApiMethods::apiResponse('error', $responseBody);
+                    if (!$checkUser->verified) {
+                        $responseBody = [
+                            'statusCode' => 422,
+                            'error' => 'login.not_verified',
+                            'message' => 'You havent verified your account, please verify first then try again.'
+                        ];
+                        return ApiMethods::apiResponse('error', $responseBody);
+                    } else if (!$checkUser->active) {
+                        $responseBody = [
+                            'statusCode' => 422,
+                            'error' => 'login.deactivated',
+                            'message' => 'Your account has been deactivated, you cannot signin.'
+                        ];
+                        return ApiMethods::apiResponse('error', $responseBody);
+                    }
                 }
-
+            } else {
+                $responseBody = [
+                    'statusCode' => 404,
+                    'error' => 'login.user_does_not_exist',
+                    'message' => 'This user does not exist, please register.'
+                ];
+                return ApiMethods::apiResponse('error', $responseBody);
             }
         } else {
             $responseBody = [
                 'statusCode' => 500,
-                'error' => 'verify.validation_failed',
+                'error' => 'login.validation_failed',
                 'message' => 'Something went wrong, please try again.'
             ];
             return ApiMethods::apiResponse('error', $responseBody);

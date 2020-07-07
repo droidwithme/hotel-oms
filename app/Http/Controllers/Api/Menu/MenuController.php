@@ -30,7 +30,7 @@ class MenuController extends Controller
     /* Get store category list */
     public function getHotelCategoryList()
     {
-        $hotelCategoryList = HotelCategory::orderBy('id','DESC')->get();
+        $hotelCategoryList = HotelCategory::orderBy('id', 'DESC')->get();
         foreach ($hotelCategoryList as $hotelCategory) {
             $hotelCategory->category_image = ($hotelCategory->category_image != null || $hotelCategory->category_image != '') ? $hotelCategory->category_image : "";
         }
@@ -40,7 +40,7 @@ class MenuController extends Controller
 
         $responseBody = [
             'message' => 'Store category list successfully retrieved.',
-            'data' => [ 'advertisements'=> $advertisements, 'hotel_categories' => $hotelCategoryList]
+            'data' => ['advertisements' => $advertisements, 'hotel_categories' => $hotelCategoryList]
         ];
         return ApiMethods::apiResponse('success', $responseBody);
     }
@@ -78,7 +78,7 @@ class MenuController extends Controller
                 $hotelList = $hotelList->where('hotel_category', $hotelCategoryId);
             }
 
-            $hotelList = $hotelList->orderBy('id','DESC')->get();
+            $hotelList = $hotelList->orderBy('id', 'DESC')->get();
             foreach ($hotelList as $key => $hotel) {
                 if ($distance != null && $distance != "") {
                     $isHotelInRange = ApiMethods::isHotelInRange($hotel->lat, $hotel->long, $lat, $long, $distance);
@@ -130,7 +130,7 @@ class MenuController extends Controller
 
             $responseBody = [
                 'message' => 'Store list successfully retrieved.',
-                'data' => ['advertisements'=>$advertisements, 'nearby_hotels' => $nearbyHotelList, 'all_hotels' => $hotelList]
+                'data' => ['advertisements' => $advertisements, 'nearby_hotels' => $nearbyHotelList, 'all_hotels' => $hotelList]
             ];
             return ApiMethods::apiResponse('success', $responseBody);
         } else {
@@ -156,7 +156,7 @@ class MenuController extends Controller
         if ($validate) {
             $hotelId = $request->input('hotel-id');
 
-            $menuItemList = MenuItem::where('hotel_id', $hotelId)->orderBy('id','DESC')->get();
+            $menuItemList = MenuItem::where('hotel_id', $hotelId)->orderBy('id', 'DESC')->get();
             foreach ($menuItemList as $key => $menuItem) {
                 $categoryId = $menuItem->item_category;
                 $menuItemId = $menuItem->id;
@@ -170,6 +170,7 @@ class MenuController extends Controller
 
                 $menuItemImages = MenuItemImage::where('item_id', $menuItemId)->get()->pluck('item_photo');
                 $menuItem['item_photos'] = $menuItemImages;
+                $menuItem['gst'] = env('STORE_GST_AMOUNT', '0');
             }
             $responseBody = [
                 'message' => 'Menu item list successfully retrieved.',
@@ -193,16 +194,26 @@ class MenuController extends Controller
 
         $validate = Validator::make($request, [
             'hotel-id' => 'required|numeric',
+            'address' => 'required',
+            'gst' => 'required|numeric',
+            'customer-instructions' => 'sometimes|nullable',
             'alternate-mobile' => 'sometimes|nullable|numeric|digits_between:10,13',
             'items-ordered' => 'required',
             'items-ordered.*.menu-item-id' => 'required|numeric',
             'items-ordered.*.amount-ordered' => 'required|numeric',
-            'items-ordered.*.price' => 'sometimes|required|numeric',
+            'items-ordered.*.price' => 'required|numeric',
         ], [
             'hotel-id.required' => 'A hotel id is required',
             'hotel-id.numeric' => 'A valid hotel id is required',
-            'alternate-mobile.required' => 'An alternate mobile number is required' ,
-            'alternate-mobile.digits_between' => 'Alternate mobile must be of at least 10 - 13 digits' ,
+
+            'address.required' => 'An address is required',
+            'customer-instructions.present' => 'Customer instructions is required',
+            'gst.required' => 'The gst is required',
+            'gst.numeric' => 'The gst must be numeric',
+
+
+            'alternate-mobile.required' => 'An alternate mobile number is required',
+            'alternate-mobile.digits_between' => 'Alternate mobile must be of at least 10 - 13 digits',
             'alternate-mobile.numeric' => 'The alternate mobile number entered must be of a numeric format ( 0-9 )',
             'items-ordered.required' => 'The products bought are required',
             'items-ordered.*.menu-item-id.required' => 'The menu item id is required',
@@ -212,15 +223,18 @@ class MenuController extends Controller
 
             'items-ordered.*.price.required' => 'The price is required',
             'items-ordered.*.price.numeric' => 'The price must be numeric',
+
+
         ]);
 
-        if ($validate->passes()) {
+        if (!$validate->fails()) {
             $hotelId = $request['hotel-id'];
             $address = $request['address'];
 
-            $alternateMobile = $request['alternate-mobile'];
-            $customerInstructions = $request['customer-instructions'];
+            $alternateMobile = isset($request['alternate-mobile']) ? $request['alternate-mobile'] : null;
+            $customerInstructions = isset($request['customer-instructions']) ? $request['customer-instructions'] : null;
             $itemsOrdered = $request['items-ordered'];
+            $gst = $request['gst'];
 
             $newOrder = new Order();
             $newOrder->api_user_id = JWTAuth::toUser()->id;
@@ -230,6 +244,7 @@ class MenuController extends Controller
             $newOrder->address = $address;
             $newOrder->alternate_mobile = $alternateMobile;
             $newOrder->customer_instructions = $customerInstructions;
+            $newOrder->gst = $gst;
             $operationStatus = $newOrder->save();
             $orderId = $newOrder->id;
 
@@ -259,9 +274,8 @@ class MenuController extends Controller
 
                     $fcmTokens = [];
                     $admins = User::all();
-                    foreach ($admins as $admin)
-                    {
-                        if(isset($admin->fcm_token)){
+                    foreach ($admins as $admin) {
+                        if (isset($admin->fcm_token)) {
                             array_push($fcmTokens, $admin->fcm_token);
                         }
                     }
@@ -293,7 +307,7 @@ class MenuController extends Controller
             $responseBody = [
                 'statusCode' => 422,
                 'error' => 'order.validation-failure',
-                'message' => $validate->errors()->all()
+                'message' => $validate->errors()->first()
             ];
             return ApiMethods::apiResponse('error', $responseBody);
         }

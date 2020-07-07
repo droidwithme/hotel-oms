@@ -15,7 +15,6 @@ class ApiMethods extends Controller
                 'message' => $responseBodyData['message'],
                 'data' => (empty($responseBodyData['data'])) ? null : $responseBodyData['data']
             ], 200);
-
         } elseif ($responseType == 'error') {
 
             return response([
@@ -24,7 +23,6 @@ class ApiMethods extends Controller
                 'error' => $responseBodyData['error'],
                 'message' => $responseBodyData['message']
             ], $responseBodyData['statusCode']);
-
         } else {
             return response([
                 'status' => false,

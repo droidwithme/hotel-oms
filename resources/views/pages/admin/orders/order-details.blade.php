@@ -83,6 +83,7 @@
                 <th>Address</th>
                 <th>Customer Instructions</th>
                 <th>Order Total</th>
+                <th>GST</th>
                 <th>Order Status</th>
             </tr>
             </thead>
@@ -105,6 +106,7 @@
                     <td class="align-middle">{{ $order->address }}</td>
                     <td class="align-middle">{{ $order->customer_instructions }}</td>
                     <td class="align-middle">{{ $order->order_total }} Rs.</td>
+                    <td class="align-middle">{{ $order->gst }}%</td>
                     <td class="align-middle">
                         @if($order->order_status == "received")
                             <button type="button" class="btn btn-primary m-1" id="order-status" data-order-id="{{ $order->id }}" data-order-status="proceeded" data-message="Are you sure you want to mark this order as proceeded?">Proceed with order</button>

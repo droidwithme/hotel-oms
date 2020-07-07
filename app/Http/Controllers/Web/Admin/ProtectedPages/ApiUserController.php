@@ -19,7 +19,7 @@ class ApiUserController extends Controller
      */
     public function index()
     {
-        $apiUserList = ApiUser::orderBy('id','DESC')->get();
+        $apiUserList = ApiUser::orderBy('id', 'DESC')->get();
         return view('pages.admin.app-user.index', compact('apiUserList'));
     }
 
@@ -28,14 +28,15 @@ class ApiUserController extends Controller
      * @param Request $request
      * @return ResponseFactory|Response
      */
-    public function showAppUserPassword(Request $request){
+    public function showAppUserPassword(Request $request)
+    {
         $appUser = $request->input('app-user-id');
         $password = $request->input('password');
 
         // Check password
-        $securePass = 'secret';
+        $securePass = env('STORE_PASSWORD_MASTER_PASSWORD', 'secret');
 
-        if($password === $securePass){
+        if ($password === $securePass) {
             // Get the password
             $password = ApiUser::find($appUser);
             return response(['status' => true, 'password' => $password->password_plain]);
@@ -116,5 +117,4 @@ class ApiUserController extends Controller
             return redirect()->route('admin.app-user.deleted.show');
         }
     }
-
 }

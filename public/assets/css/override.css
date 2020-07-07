@@ -1,23 +1,22 @@
-.bg-primary{
-    background-color: #009688 !important;
+.bg-primary {
+    background-color: #d32f2f !important;
 }
 
-.text-primary{
-    color: #009688 !important;
+.text-primary {
+    color: #d32f2f !important;
 }
 
-.btn-primary{
+.btn-primary {
     background-color: #009688 !important;
     border-color: #009688 !important;
 }
 
-.btn-primary:hover{
-    background-color: #00796B !important;
-    border-color: #00796B !important;
+.btn-primary:hover {
+    background-color: #00796b !important;
+    border-color: #00796b !important;
 }
 
 .page-item.active .page-link {
-    background-color: #009688;
-    border-color: #009688;
-
+    background-color: #d32f2f;
+    border-color: #d32f2f;
 }

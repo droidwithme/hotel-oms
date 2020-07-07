@@ -21,7 +21,7 @@ class HotelController extends Controller
      */
     public function index()
     {
-        $hotelList = Hotel::orderBy('id','DESC')->get();
+        $hotelList = Hotel::orderBy('id', 'DESC')->get();
         foreach ($hotelList as $hotel) {
             $hotelCategoryName = HotelCategory::find($hotel->hotel_category);
             if ($hotelCategoryName) {
@@ -38,14 +38,15 @@ class HotelController extends Controller
      * @param Request $request
      * @return ResponseFactory|Response
      */
-    public function showHotelPassword(Request $request){
+    public function showHotelPassword(Request $request)
+    {
         $hotel = $request->input('hotel-id');
         $password = $request->input('password');
 
         // Check password
-        $securePass = 'secret';
+        $securePass = env('STORE_PASSWORD_MASTER_PASSWORD', 'secret');
 
-        if($password === $securePass){
+        if ($password === $securePass) {
             // Get the password
             $password = Hotel::find($hotel);
             return response(['status' => true, 'password' => $password->password_plain]);
@@ -61,7 +62,7 @@ class HotelController extends Controller
      */
     public function create()
     {
-        $hotelCategoryList = HotelCategory::orderBy('id','DESC')->get();
+        $hotelCategoryList = HotelCategory::orderBy('id', 'DESC')->get();
         return view('pages.admin.hotel.create', compact('hotelCategoryList'));
     }
 
@@ -122,8 +123,6 @@ class HotelController extends Controller
             $request->session()->flash('flash_notification.message', 'Store successfully created.');
             $request->session()->flash('flash_notification.level', 'success');
             return redirect()->route('admin.hotel.index');
-
-
         } else {
             $request->session()->flash('flash_notification.message', 'An error occurred, please try again later. ');
             $request->session()->flash('flash_notification.level', 'danger');
@@ -141,7 +140,7 @@ class HotelController extends Controller
     public function edit(HotelRequest $request, $id)
     {
         $item = Hotel::find($id);
-        $hotelCategoryList = HotelCategory::orderBy('id','DESC')->get();
+        $hotelCategoryList = HotelCategory::orderBy('id', 'DESC')->get();
         if (isset($item)) {
             return view('pages.admin.hotel.edit', compact('item', 'hotelCategoryList'));
         } else {
@@ -262,7 +261,7 @@ class HotelController extends Controller
 
     public function showDeleted()
     {
-        $hotelList = Hotel::onlyTrashed()->orderBy('id','DESC')->get();
+        $hotelList = Hotel::onlyTrashed()->orderBy('id', 'DESC')->get();
         foreach ($hotelList as $hotel) {
             $hotelCategoryName = HotelCategory::find($hotel->hotel_category);
             if ($hotelCategoryName) {

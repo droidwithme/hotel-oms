@@ -18,7 +18,7 @@ class ApiUser extends Authenticatable implements JWTSubject
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'mobile', 'password', 'password_plain', 'address', 'lat', 'long', 'verification_code', 'profile_picture_path', 'active', 'fcm_token'
+        'name', 'email', 'mobile', 'password', 'password_plain', 'address', 'lat', 'long', 'profile_picture_path', 'verification_code', 'verified', 'active', 'fcm_token'
     ];
 
     /**
@@ -32,6 +32,7 @@ class ApiUser extends Authenticatable implements JWTSubject
      * Type cast the active field
      */
     protected $casts = [
+        'verified' => 'boolean',
         'active' => 'boolean',
     ];
 

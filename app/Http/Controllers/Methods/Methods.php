@@ -50,4 +50,31 @@ class Methods
         $user = User::find($userId);
         return $user->name;
     }
+
+    public static function sendOtpVerificationSMS($mobileNumber, $verificationCode)
+    {
+        // Account details
+        $apiKey = urlencode(env('SMSVERIFICATION_APIKEY', 'unknown'));
+        $appHash = urlencode(env('SMSVERIFICATION_APPHASH', 'unknown'));
+
+        // Message details
+        $numbers = array($mobileNumber);
+        $sender = urlencode('TXTLCL');
+        $message = rawurlencode('<#> Store App: Your verification code is ' . $verificationCode . '
+' . $appHash);
+
+        $numbers = implode(',', $numbers);
+
+        // Prepare data for POST request
+        $data = array('apikey' => $apiKey, 'numbers' => $numbers, "sender" => $sender, "message" => $message);
+
+        // Send the POST request with cURL
+        $ch = curl_init('https://api.textlocal.in/send/');
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $response = curl_exec($ch);
+        dd($response);
+        curl_close($ch);
+    }
 }

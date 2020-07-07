@@ -15,7 +15,7 @@ class Order extends Model
      * @var array
      */
     protected $fillable = [
-        'api_user_id', 'hotel_id', 'order_id', 'order_date', 'address', 'alternate_mobile', 'customer_instructions', 'order_status'
+        'api_user_id', 'hotel_id', 'order_id', 'order_date', 'address', 'alternate_mobile', 'customer_instructions', 'order_status', 'gst'
     ];
 
     /**
