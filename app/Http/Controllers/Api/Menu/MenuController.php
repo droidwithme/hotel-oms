@@ -12,6 +12,7 @@ use App\Models\HotelCategory;
 use App\Models\MenuItem;
 use App\Models\MenuItemCategory;
 use App\Models\MenuItemImage;
+use App\Models\MenuItemOffer;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\User;
@@ -168,6 +169,7 @@ class MenuController extends Controller
                     unset($menuItemList[$key]);
                 }
 
+                $menuItem['offers'] = MenuItemOffer::where('product_id', $menuItemId)->get(['offer_name', 'offer_description', 'offer_type', 'discount_amount', 'products_free_quantity']);
                 $menuItemImages = MenuItemImage::where('item_id', $menuItemId)->get()->pluck('item_photo');
                 $menuItem['item_photos'] = $menuItemImages;
                 $menuItem['gst'] = env('STORE_GST_AMOUNT', '0');

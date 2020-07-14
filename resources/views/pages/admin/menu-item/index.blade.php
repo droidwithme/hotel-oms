@@ -119,8 +119,9 @@
                             </td>
                             <td class="align-middle">{{ $item->menu_category_name }}</td>
                             <td class="align-middle">
-                                <a href="{{ route('admin.hotel.menu-item.edit', ['hotelId'=>$hotel->id, 'id'=>$item->id]) }}" class="btn btn-primary m-2"><i class="fa fa-edit"></i> Edit</a>
                                 <a href="{{ route('admin.hotel.menu-item.duplicate', ['hotelId'=>$hotel->id, 'id'=>$item->id]) }}" class="btn btn-primary m-2"><i class="fa fa-plus"></i> Duplicate</a>
+                                <a href="{{ route('admin.hotel.menu-item.offer.index', ['hotelId'=>$hotel->id, 'productId'=>$item->id]) }}" class="btn btn-primary m-2"><i class="fas fa-gift"></i> Offers</a>
+                                <a href="{{ route('admin.hotel.menu-item.edit', ['hotelId'=>$hotel->id, 'id'=>$item->id]) }}" class="btn btn-primary m-2"><i class="fa fa-edit"></i> Edit</a>
                                 <form method="POST" id="delete-data-form" action="{{ route('admin.hotel.menu-item.delete', ['hotelId'=>$hotel->id, 'id'=>$item->id]) }}" hidden>
                                     {{ csrf_field() }}
                                     {{ method_field('DELETE') }}

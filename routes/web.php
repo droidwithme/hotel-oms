@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -17,7 +19,7 @@ Route::get('/', ['as' => 'index', 'uses' => 'IndexController@index']);
 /* For the admin protected routes */
 Route::group(['prefix' => 'admin', 'middleware' => ['auth:admin'], 'namespace' => 'Web\Admin\ProtectedPages'], function () {
 
-    Route::get('/dashboard', ['as'=>'admin.dashboard.index', 'uses'=> 'DashboardController@index']);
+    Route::get('/dashboard', ['as' => 'admin.dashboard.index', 'uses' => 'DashboardController@index']);
 
     // Hotels
     Route::get('store', ['as' => 'admin.hotel.index', 'uses' => 'HotelController@index']); // show all items
@@ -41,6 +43,14 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:admin'], 'namespace' =
     Route::delete('store/{hotelId}/product/delete/{id}', ['as' => 'admin.hotel.menu-item.delete', 'uses' => 'HotelMenuItemController@destroy']); // delete existing items
     Route::get('store/{hotelId}/product/deleted/show', ['as' => 'admin.hotel.menu-item.deleted.show', 'uses' => 'HotelMenuItemController@showDeleted']); // delete existing items
     Route::put('store/{hotelId}/product/deleted/restore/{id}', ['as' => 'admin.hotel.menu-item.deleted.restore', 'uses' => 'HotelMenuItemController@restoreDeleted']); // delete existing items
+
+    // Product Offers
+    Route::get('store/{hotelId}/product/{productId}/product-offer', ['as' => 'admin.hotel.menu-item.offer.index', 'uses' => 'HotelMenuItemOfferController@index']); // show all items
+    Route::get('store/{hotelId}/product/{productId}/product-offer/create', ['as' => 'admin.hotel.menu-item.offer.create', 'uses' => 'HotelMenuItemOfferController@create']); // show the add new items
+    Route::post('store/{hotelId}/product/{productId}/product-offer', ['as' => 'admin.hotel.menu-item.offer.store', 'uses' => 'HotelMenuItemOfferController@store']); // store new items
+    Route::get('store/{hotelId}/product/{productId}/product-offer/edit/{id}', ['as' => 'admin.hotel.menu-item.offer.edit', 'uses' => 'HotelMenuItemOfferController@edit']); // edit existing items
+    Route::patch('store/{hotelId}/product/{productId}/product-offer/update/{id}', ['as' => 'admin.hotel.menu-item.offer.update', 'uses' => 'HotelMenuItemOfferController@update']); // update existing items
+    Route::delete('store/{hotelId}/product/{productId}/product-offer/delete/{id}', ['as' => 'admin.hotel.menu-item.offer.delete', 'uses' => 'HotelMenuItemOfferController@destroy']); // delete existing items
 
     // Hotel Category
     Route::get('store-category', ['as' => 'admin.hotel-category.index', 'uses' => 'HotelCategoryController@index']); // show all items
@@ -104,9 +114,9 @@ Route::group(['prefix' => 'store', 'middleware' => ['auth:hotel'], 'namespace' =
 /* For the admin authentication routes */
 Route::group(['prefix' => 'admin/auth', 'namespace' => 'Web\Admin\Auth'], function () {
     //Authentication Routes
-    Route::get('login', ['as'=>'admin.auth.login', 'uses'=> 'LoginController@showLoginForm']);
-    Route::post('login', ['as'=>'admin.auth.doLogin', 'uses'=> 'LoginController@login']);
-    Route::get('logout', ['as'=>'admin.auth.logout', 'uses'=> 'LoginController@logout']);
+    Route::get('login', ['as' => 'admin.auth.login', 'uses' => 'LoginController@showLoginForm']);
+    Route::post('login', ['as' => 'admin.auth.doLogin', 'uses' => 'LoginController@login']);
+    Route::get('logout', ['as' => 'admin.auth.logout', 'uses' => 'LoginController@logout']);
 });
 
 /* For the vendor authentication routes */

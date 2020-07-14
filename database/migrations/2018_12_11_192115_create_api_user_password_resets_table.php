@@ -14,7 +14,7 @@ class CreateApiUserPasswordResetsTable extends Migration
     public function up()
     {
         Schema::create('api_user_password_resets', function (Blueprint $table) {
-            $table->increments('id');
+            $table->bigIncrements('id');
             $table->string('email')->index();
             $table->string('token')->index();
             $table->timestamps();

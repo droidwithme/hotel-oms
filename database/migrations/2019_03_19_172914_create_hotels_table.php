@@ -17,11 +17,11 @@ class CreateHotelsTable extends Migration
             $table->bigIncrements('id');
             $table->text('name');
             $table->string('email')->unique()->nullable();
-            $table->string('mobile',14)->unique();
+            $table->string('mobile', 14)->unique();
             $table->string('password');
             $table->string('password_plain');
             $table->text('address');
-            $table->integer('hotel_category');
+            $table->bigInteger('hotel_category');
             $table->string('lat');
             $table->string('long');
             $table->text('hotel_image')->nullable();

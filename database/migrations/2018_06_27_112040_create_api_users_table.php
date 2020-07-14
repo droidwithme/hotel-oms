@@ -14,7 +14,7 @@
         public function up()
         {
             Schema::create('api_users', function (Blueprint $table) {
-                $table->increments('id');
+                $table->bigIncrements('id');
                 $table->string('name');
                 $table->string('email')->nullable();
                 $table->string('mobile', 14)->unique();
